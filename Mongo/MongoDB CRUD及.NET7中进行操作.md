@@ -1,0 +1,548 @@
+# 从 0 开始 MongoDB CRUD 及.Net7 中如何使用
+
+- 前面几篇文章详细的介绍了,如何使用 Ubuntu 系统进行各种模式的集群部署.今天这里我们就开始正式的使用.
+- 由于 MongoDB 操作很多,很多操作还很复杂,需要一些功底,所以这里先从数据库界的 Hello World(CRUD)开始.
+- 本来想直接上来就讲操作的,才发现 Mongodb 的语法和一般数据库不一样,还得先介绍下查询条件.
+- 查询条件常在更新和查询时候使用,当然使用聚合管道的时候也需要使用到.
+- 这里先将支持的操作符分类列举出来.参考[官方文档](https://www.mongodb.com/docs/rapid/reference/operator/query/)
+- https://www.mongodb.com/docs/rapid/reference/operator/query/
+
+### 比较(Comparison)
+
+| 名字 | 含义                           | 英文原文                                                            |
+| ---- | ------------------------------ | ------------------------------------------------------------------- |
+| $eq  | 匹配 等于(==) 指定值的值       | Matches values that are equal to a specified value.                 |
+| $gt  | 匹配 大于(>) 指定值的值        | Matches values that are greater than a specified value.             |
+| $gte | 匹配 大于等于(>=) 指定值的值   | Matches values that are greater than or equal to a specified value. |
+| $in  | 匹配数组中指定的任何值         | Matches any of the values specified in an array.                    |
+| $lt  | 匹配 小于(<) 指定值的值        | Matches values that are less than a specified value.                |
+| $lte | 匹配 小于或等于(<=) 指定值的值 | Matches values that are less than or equal to a specified value.    |
+| $ne  | 匹配 所有不等于(!=) 指定值的值 | Matches all values that are not equal to a specified value.         |
+| $nin | 与数组中指定的值均不匹配       | Matches none of the values specified in an array.                   |
+
+### 逻辑(Logical)
+
+| 名字 | 含义                                                    | 英文原文                                                                                                |
+| ---- | ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| $and | 用逻辑和连接查询子句,返回符合两个子句条件的所有文档     | Joins query clauses with a logical AND returns all documents that match the conditions of both clauses. |
+| $not | 反映一个查询表达式的效果,并返回与查询表达式不匹配的文件 | Inverts the effect of a query expression and returns documents that do not match the query expression.  |
+| $nor | 用逻辑 NOR 连接查询子句,返回所有不能匹配两个子句的文档  | Joins query clauses with a logical NOR returns all documents that fail to match both clauses.           |
+| $or  | 用逻辑 OR 连接查询子句,返回符合任一子句条件的所有文档   | Joins query clauses with a logical OR returns all documents that match the conditions of either clause. |
+
+### 元素(Element)
+
+| 名字    | 含义                                | 英文原文                                               |
+| ------- | ----------------------------------- | ------------------------------------------------------ |
+| $exists | 匹配有指定字段的文档                | Matches documents that have the specified field.       |
+| $type   | 如果一个字段是指定的类型,则选择文件 | Selects documents if a field is of the specified type. |
+
+### 评价(Evaluation)
+
+这个英文翻译过来有点不知道理解了 🤣,看别人也这么翻译的,就暂且这么叫吧,这个方面的选择器,目前在工作中大部分尚未遇到,后期研究了再细究.
+
+| 名字        | 含义                                                | 英文原文                                                             |
+| ----------- | --------------------------------------------------- | -------------------------------------------------------------------- |
+| $expr       | 允许在查询语言中使用聚合表达式                      | Allows use of aggregation expressions within the query language.     |
+| $jsonSchema | 根据给定的 JSON 模式验证文档                        | Allows use of aggregation expressions within the query language.     |
+| $mod        | 对一个字段的值进行模数运算,并选择具有指定结果的文档 | Validate documents against the given JSON Schema.                    |
+| $regex      | 选择那些数值与指定的正则表达式相匹配的文件          | Selects documents where values match a specified regular expression. |
+| $text       | 执行文本搜索                                        | Performs text search.                                                |
+| $where      | 匹配满足 JavaScript 表达式的文档                    | Matches documents that satisfy a JavaScript expression.              |
+
+### 地理位置(Geospatial)
+
+| 名字           | 含义                                                | 英文原文                                                                                                                                      |
+| -------------- | --------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| $geoIntersects | 选择与 GeoJSON 几何体相交的几何体                   | Selects geometries that intersect with a GeoJSON geometry. The 2dsphere index supports $geoIntersects.                                        |
+| $geoWithin     | 在一个有边界的 GeoJSON 几何体中选择几何体           | Selects geometries within a bounding GeoJSON geometry. The 2dsphere and 2d indexes support $geoWithin.                                        |
+| $near          | 返回靠近某个点的地理空间对象.需要地理空间索引       | Returns geospatial objects in proximity to a point. Requires a geospatial index. The 2dsphere and 2d indexes support $near.                   |
+| $nearSphere    | 返回与球体上的点附近的地理空间对象.需要地理空间索引 | Returns geospatial objects in proximity to a point on a sphere. Requires a geospatial index. The 2dsphere and 2d indexes support $nearSphere. |
+
+### 数组(Array)
+
+| 名字       | 含义                                                | 英文原文                                                                                         |
+| ---------- | --------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| $all       | 匹配包含查询中指定的所有元素的数组                  | Matches arrays that contain all elements specified in the query.                                 |
+| $elemMatch | 如果数组字段中的元素与所有指定的元素匹配,则选择文档 | Selects documents if element in the array field matches all the specified $elemMatch conditions. |
+| $size      | 如果数组字段为指定大小,则选择文档                   | Selects documents if the array field is a specified size.                                        |
+
+### 按位(Bitwise)
+
+| 名字          | 含义                                                      | 英文原文                                                                                        |
+| ------------- | --------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| $bitsAllClear | 匹配数字或二进制值,其中一组比特位置的值均为 0             | Matches numeric or binary values in which a set of bit positions all have a value of 0.         |
+| $bitsAllSet   | 匹配数字或二进制值,其中一组比特位置的值都是 1             | Matches numeric or binary values in which a set of bit positions all have a value of 1.         |
+| $bitsAnyClear | 匹配数字或二进制值,其中一组比特位置的任何一个比特的值为 0 | Matches numeric or binary values in which any bit from a set of bit positions has a value of 0. |
+| $bitsAnySet   | 匹配数字或二进制值,其中一组比特位置的任何一个比特的值为 1 | Matches numeric or binary values in which any bit from a set of bit positions has a value of 1. |
+
+---
+
+- 上述是查询运算符,接下来是投影运算符
+
+### 投影运算符(Projection Operators)
+
+| 名字       | 含义                                                | 英文原文                                                                                |
+| ---------- | --------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| $          | 投射一个数组中符合查询条件的第一个元素              | Projects the first element in an array that matches the query condition.                |
+| $elemMatch | 投射一个数组中符合指定的$elemMatch 条件的第一个元素 | Projects the first element in an array that matches the specified $elemMatch condition. |
+| $meta      | 投射在$text 操作中分配的文档分数                    | Projects the document's score assigned during $text operation.                          |
+| $slice     | 限制从一个数组中投射的元素的数量.支持跳过和限制分片 | Limits the number of elements projected from an array. Supports skip and limit slices.  |
+
+### 杂项运算符(Miscellaneous Operators)
+
+| 名字     | 含义                             | 英文原文                                  |
+| -------- | -------------------------------- | ----------------------------------------- |
+| $comment | 为一个查询谓词添加注释           | Adds a comment to a query predicate.      |
+| $rand    | 产生一个 0 到 1 之间的随机浮点数 | Generates a random float between 0 and 1. |
+
+---
+
+### 字段更新(Field Update Operators)
+
+| 名字         | 含义                                                                                   | 英文原文                                                                                                                                      |
+| ------------ | -------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| $currentDate | 将一个字段的值设置为当前日期,可以是日期或时间戳                                        | Sets the value of a field to current date, either as a Date or a Timestamp.                                                                   |
+| $inc         | 将字段的值按指定的数量递增                                                             | Increments the value of the field by the specified amount.                                                                                    |
+| $min         | 只在指定值小于现有字段值时更新字段                                                     | Only updates the field if the specified value is less than the existing field value.                                                          |
+| $max         | 仅当指定的值大于现有字段的值时才更新字段                                               | Only updates the field if the specified value is greater than the existing field value.                                                       |
+| $mul         | 将字段的值乘以指定的数量                                                               | Multiplies the value of the field by the specified amount.                                                                                    |
+| $rename      | 重命名一个字段                                                                         | Renames a field.                                                                                                                              |
+| $set         | 在文档中设置一个字段的值                                                               | Sets the value of a field in a document.                                                                                                      |
+| $setOnInsert | 设置一个字段的值,如果一个更新操作导致了一个文档的插入.对修改现有文档的更新操作没有影响 | Sets the value of a field if an update results in an insert of a document. Has no effect on update operations that modify existing documents. |
+| $unset       | 从一个文档中删除指定的字段                                                             | Removes the specified field from a document.                                                                                                  |
+
+---
+
+- 如上就是常用的一些查询操作符.其实不必害怕需要学习这么多,其实常用的就是比较和逻辑运算符,别的操作可以先了解下,当需要的时候再去官网查询.
+- 接下来我们先使用 Navicat,或者 MongoDB Compass 连接到 MongoDB 进行一些常规的 CRUD 操作.我这里使用 Navicat,因为他支持中文.
+- 首先我们新增一些测试数据.
+- 直接点击新建查询.输入如下代码,点击执行.
+
+```JavaScript
+// 插入一条数据
+db.getCollection('crud').insertOne({
+    'index': 0,
+    'name': '张三',
+    'age': 12,
+    'gender': '女',
+    'birthday': new Date('2023-01-14')
+});
+```
+
+- 通过上述操作我们可以发现,mongodb 相当的方便,不需要先创建好数据库和集合即可直接插入数据.这也是我非常喜欢他的原因之一.虽然我这里提前创建了 test 数据库.
+- 接下来介绍插入多条数据的操作.
+
+```JavaScript
+// 创建一个数组,循环将数据加入其中
+var list = [];
+for (var i = 0; i < 100; i++) {
+    list.push({
+        "index": i,
+        "name": "张三",
+        "age": i + 1,
+        "gender": "女",
+        "birthday": new Date('2023-01-14')
+    });
+}
+// 执行MongoDB语句批量插入数据.
+db.getCollection("crud").insertMany(list);
+```
+
+- 通过上述代码就可以发现 mongodb 的"SQL 语句"其实就是 JavaScript 代码,比起 SQL 语句,JavaScript 的逻辑清晰,更易理解了.
+- 所以在可视化管理工具中,我们可以利用 JavaScript 代码来执行一些操作和查询以及复杂算法.
+- 新增和批量新增均已经写完了,接下来就是更新了.
+- 比如我们需要更新所有 index = 0 的 name 属性为李四
+
+```JavaScript
+// 由于前边的代码我们可以发现,index == 0 的文档其实有两个,所以我们可以使用 updateMany 方法更新多个文档
+// 举一反三,我们也可以知道更新一个文档的方法为 updateOne
+// 该函数的第一个参数为查询条件,因为我们需要告诉数据库要更新哪些文档.
+// 第二个参数为如何设置值
+// 第三个参数为可选参数,其中可以针对一些特殊场景进行配置,比如说,当文档不存在的时候就新增,
+// 这里我们就遇到了一个 $set 操作符
+db.getCollection("crud").updateMany({
+    'index': 0
+}, {
+    $set: {
+        'name': '李四'
+    }
+});
+// 为了体现查询操作符,所以我这里再写另一种写法
+db.getCollection("crud").updateMany({
+    'index': {
+        $eq: 0
+    }
+}, {
+    $set: {
+        'name': '李四'
+    }
+});
+```
+
+- 接下来是删除操作.
+- 这里举例,删除 index 为 1-10 的所有文档
+
+```JavaScript
+// 举一反三,同样删除单个文档的操作为 deleteOne
+// 1-10其实就是小于等于10大于0的所有数据,于是条件可以这么写
+db.getCollection("crud").deleteMany({
+    'index': {
+        $lte: 10,
+        $gt: 0
+    }
+});
+```
+
+- 再举个栗子,删除 index 在数组 [ 11, 13, 15, 49, 38, 25, 90, 99 ] 中的文档.
+
+```JavaScript
+db.getCollection("crud").deleteMany({
+    'index': {
+        $in: [ 11, 13, 15, 49, 38, 25, 90, 99 ]
+    }
+});
+```
+
+- 查询的话其实我们已经不用讲了,只需要知道查询的函数为 find,因为前边的更新和删除函数中的查询条件,其实和 find 的参数要求一样的.
+- 这里还是举个例子.
+
+```JavaScript
+// 查询所有数据
+db.getCollection("crud").find();
+db.getCollection("crud").find({});
+// 这两种写法等效的.
+// 查询age大于20的文档
+db.getCollection("crud").find({
+    'age': {
+        $gt: 20
+    }
+});
+// 查询age等于20的文档,并且name为李四的文档
+db.getCollection("crud").find({
+    'age': 20,
+    'name': '李四'
+});
+```
+
+- 至此,常规的使用 Navicat 进行 MongoDB 的 CRUD 就基本讲完了.有什么问题可以提问私信或者留言给我.
+
+---
+
+## C#和.NET 7 如何使用呢?(从 0 开始)
+
+- 既然是从 0 开始,那么我们就真从 0 开始.
+- 不使用我封装过的 MongoDB 驱动,当然想了解的可以去[看看源码](https://github.com/joesdu/Hoyo)
+- https://github.com/joesdu/Hoyo
+- 首先我们使用 VS 创建一个空白的 WebApi 项目.并且添加 MongoDB.Driver Nuget 包
+- 然后创建一个 BaseDbContext.cs 用来作为 DBContext 的基类,其代码如下:
+
+```csharp
+public class BaseDbContext
+{
+    /// <summary>
+    /// MongoClient
+    /// </summary>
+    public IMongoClient Client { get; private set; } = default!;
+    /// <summary>
+    /// 获取链接字符串或者HoyoMongoSettings中配置的特定名称数据库或默认数据库hoyo
+    /// </summary>
+    public IMongoDatabase Database { get; private set; } = default!;
+
+    /// <summary>
+    ///  使用链接字符串创建客户端,并提供字符串中的数据库
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="connStr">链接字符串</param>
+    /// <param name="db">数据库名称</param>
+    /// <returns></returns>
+    internal static T CreateInstance<T>(string connStr, string db = "hoyo") where T : BaseDbContext
+    {
+        var t = Activator.CreateInstance<T>();
+        var mongoUrl = new MongoUrl(connStr);
+        var clientSettings = MongoClientSettings.FromUrl(mongoUrl);
+        t.Client = new MongoClient(clientSettings);
+        var dbName = !string.IsNullOrWhiteSpace(mongoUrl.DatabaseName) ? mongoUrl.DatabaseName : db;
+        t.Database = t.Client.GetDatabase(dbName);
+        return t;
+    }
+}
+```
+
+- 再创建一个 MongoExtension.cs 方便我们注册服务和配置 Mongodb 的一些行为.代码如下.
+
+```csharp
+public static class MongoExtension
+{
+    /// <summary>
+    /// 通过连接字符串添加DbContext
+    /// </summary>
+    /// <typeparam name="T">Hoyo.Mongo.DbContext</typeparam>
+    /// <param name="services">IServiceCollection</param>
+    /// <param name="connStr">链接字符串</param>
+    /// <returns></returns>
+    // ReSharper disable once MemberCanBePrivate.Global
+    public static IServiceCollection AddMongoDbContext<T>(this IServiceCollection services, string connStr) where T : BaseDbContext
+    {
+        RegistryConventionPack();
+        var db = BaseDbContext.CreateInstance<T>(connStr);
+        _ = services.AddSingleton(db).AddSingleton(db.Database).AddSingleton(db.Client);
+        return services;
+    }
+    /// <summary>
+    /// 注册Pack
+    /// </summary>
+    private static void RegistryConventionPack(bool first = true)
+    {
+        if (first)
+        {
+            var pack = new ConventionPack
+            {
+                new CamelCaseElementNameConvention(),// 驼峰命名字段
+                new IgnoreExtraElementsConvention(true),
+                new NamedIdMemberConvention("Id","ID"),// 将_id字段映射为Id或者ID
+                new EnumRepresentationConvention(BsonType.String),// 将枚举类型存储为字符串值
+            };
+            ConventionRegistry.Register($"hoyo-pack-{Guid.NewGuid()}", pack, _ => true);
+            BsonSerializer.RegisterSerializer(new DateTimeSerializer(DateTimeKind.Local));// 将时间转化为本地时间
+            BsonSerializer.RegisterSerializer(new DecimalSerializer(BsonType.Decimal128));
+            BsonSerializer.RegisterSerializer(new DateOnlySerializer());
+        }
+        var idpack = new ConventionPack
+        {
+            new StringObjectIdIdGeneratorConvention()//Id[string] mapping ObjectId
+        };
+        ConventionRegistry.Register($"id-pack{Guid.NewGuid()}", idpack, _ => true);
+    }
+}
+/// <summary>
+/// map the [BsonRepresentation(MongoDB.Bson.BsonType.ObjectId]
+/// </summary>
+internal class StringObjectIdIdGeneratorConvention : ConventionBase, IPostProcessingConvention
+{
+    public void PostProcess(BsonClassMap classMap)
+    {
+        var idMemberMap = classMap.IdMemberMap;
+        if (idMemberMap is null || idMemberMap.IdGenerator is not null) return;
+        if (idMemberMap.MemberType == typeof(string)) _ = idMemberMap.SetIdGenerator(StringObjectIdGenerator.Instance).SetSerializer(new StringSerializer(BsonType.ObjectId));
+    }
+}
+```
+
+- 由于上边临时决定添加一个 DateOnly 类型,而 Mongo 不支持这种新类型,所以我们需要自己实现他的序列化方式.所以这里加进来也是为了教大家如何去做类似的事情,比如 TimeOnly,以及他们对应的可空类型.
+
+```csharp
+/// <summary>
+/// DateOnly序列化方式
+/// </summary>
+internal sealed class DateOnlySerializer : StructSerializerBase<DateOnly>
+{
+    public override void Serialize(BsonSerializationContext context, BsonSerializationArgs args, DateOnly value)
+    {
+        var str = value.ToString("yyyy-MM-dd");
+        context.Writer.WriteString(str);
+    }
+
+    public override DateOnly Deserialize(BsonDeserializationContext context, BsonDeserializationArgs args)
+    {
+        var str = context.Reader.ReadString();
+        var success = DateOnly.TryParse(str, out var result);
+        return success ? result : throw new("不受支持的数据格式.");
+    }
+}
+```
+
+- 基础的事情做好了后,就创建前边用到的数据类型的实体. Person.cs ,同时再性别这个字段使用枚举类型,来体现 MongoDB 将枚举转化成字符串格式存储的能力.
+
+```csharp
+public class Person
+{
+    /// <summary>
+    /// 数据ID
+    /// </summary>
+    public string Id { get; set; } = string.Empty;
+    /// <summary>
+    /// 和例子中的数据结构同步
+    /// </summary>
+    public int Index { get; set; }
+    /// <summary>
+    /// Name
+    /// </summary>
+    public string Name { get; set; } = string.Empty;
+    /// <summary>
+    /// 年龄
+    /// </summary>
+    public int Age { get; set; }
+    /// <summary>
+    /// 性别
+    /// </summary>
+    public Gender Gender { get; set; } = Gender.男;
+    /// <summary>
+    /// 临时决定,使用.Net 6新增类型保存生日,同时让例子变得丰富,明白如何将MongoDB不支持的数据类型序列化
+    /// </summary>
+    public DateOnly Birthday { get; set; }
+}
+
+public enum Gender
+{
+    男,
+    女
+}
+```
+
+- 这些内容创建好后,我们紧接着创建我们实际使用的 DbContext.cs 用来管理我们业务中使用的集合.
+
+```csharp
+public sealed class DbContext : BaseDbContext
+{
+    /// <summary>
+    ///
+    /// </summary>
+    public IMongoCollection<Person> Person => Database.GetCollection<Person>("person");
+}
+```
+
+- 接下来再去 Programe.cs 中注入服务即可通过依赖注入来使用我们的 DbContext 了.这里贴上完整代码,便于观察.
+
+```csharp
+var builder = WebApplication.CreateBuilder(args);
+// Add services to the container.
+builder.Services.AddControllers();
+// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
+#region MongoDB服务注入
+var dbStr = builder.Configuration.GetConnectionString("Mongo");
+builder.Services.AddMongoDbContext<DbContext>(dbStr!);
+#endregion
+
+var app = builder.Build();
+// Configure the HTTP request pipeline.
+if (app.Environment.IsDevelopment())
+{
+    _ = app.UseSwagger().UseSwaggerUI();
+}
+app.UseAuthorization();
+app.MapControllers();
+app.Run();
+```
+
+- 接下来我们就正式使用 C#操作 MongoDB 了.
+- 首先先删除模板项目的 WeatherForecast.cs 及对 WeatherForecast 控制器改个名.毕竟我们不需要看天气 😁.
+- 我这里将名称改为了 MongoCrudController.cs,通过调整为如下内容.
+
+```csharp
+[ApiController, Route("[controller]")]
+public class MongoCrudController : ControllerBase
+{
+    private readonly DbContext _db;
+    public MongoCrudController(DbContext db)
+    {
+        _db = db;
+    }
+}
+```
+
+- 害,终于完成了符合我风格的基本配置.现在可以开始正式写 Crud 的代码了.
+
+```csharp
+[ApiController, Route("[controller]")]
+public class MongoCrudController : ControllerBase
+{
+    private readonly DbContext _db;
+    public MongoCrudController(DbContext db)
+    {
+        _db = db;
+    }
+
+    private readonly FilterDefinitionBuilder<Person> _bf = Builders<Person>.Filter;
+    private readonly UpdateDefinitionBuilder<Person> _bu = Builders<Person>.Update;
+
+    [HttpPost("one")]
+    public async Task<Person> InsertOne()
+    {
+        // 这里我们不需要为 Id 字段赋值,因为插入成功后,会自动为Id字段绑定值.
+        var person = new Person
+        {
+            Name = "张三",
+            Age = 20,
+            Birthday = DateOnly.FromDateTime(DateTime.Now),
+            Gender = Gender.女,
+            Index = 0
+        };
+        await _db.Person.InsertOneAsync(person);
+        Console.WriteLine(person.Id);
+        return person;
+    }
+
+    [HttpPost("many")]
+    public async Task<IEnumerable<Person>> InsertMany()
+    {
+        var list = new List<Person>();
+        for (var i = 0; i < 100; i++)
+        {
+            list.Add(new()
+            {
+                Name = "张三",
+                Age = 20 + i,
+                Birthday = DateOnly.FromDateTime(DateTime.Now),
+                Gender = i % 2 == 0 ? Gender.女 : Gender.男,
+                Index = i
+            });
+        }
+        await _db.Person.InsertManyAsync(list);
+        return list;
+    }
+
+    [HttpGet("all")]
+    public async Task<IEnumerable<Person>> FindAll()
+    {
+        // return await _db.Person.Find("{}").ToListAsync();
+        // 两种写法等效,但是并不建议在C#中直接写JSON字符串查询,除非一些特殊情况.
+        return await _db.Person.Find(_bf.Empty).ToListAsync();
+    }
+
+    [HttpGet("IndexIs0")]
+    public async Task<IEnumerable<Person>> FindIndexIs0()
+    {
+        return await _db.Person.Find(_bf.Eq(c => c.Index, 0)).ToListAsync();
+    }
+
+    [HttpPut("one/{index:int}")]
+    public async Task UpdateOne(int index)
+    {
+        // 展示拉姆达表达式的条件方式,以及第三个可选参数的配置.
+        _ = await _db.Person.UpdateOneAsync(c => c.Index == index, _bu.Set(c => c.Age, 17), new() { IsUpsert = true });
+    }
+
+    [HttpPut("IndexIs0")]
+    public async Task UpdateIndexIs0()
+    {
+        _ = await _db.Person.UpdateManyAsync(_bf.Eq(c => c.Index, 0), _bu.Set(c => c.Name, "李四"));
+    }
+
+    [HttpDelete("one/{index:int}")]
+    public async Task DeleteOne(int index)
+    {
+        _ = await _db.Person.DeleteOneAsync(c => c.Index == index);
+        // 两种写法等效
+        //_ = await _db.Person.DeleteOneAsync(_bf.Eq(c => c.Index, index));
+    }
+
+    [HttpDelete("many")]
+    public async Task DeleteMany()
+    {
+        var indexs = new[] { 12, 25, 14, 36, 95, 42 };
+        _ = await _db.Person.DeleteManyAsync(c => indexs.Contains(c.Index));
+        // 两种写法等效.
+        //_ = await _db.Person.DeleteManyAsync(_bf.In(c => c.Index, indexs));
+    }
+}
+```
+
+- 至此,基本上常规的 CRUD 操作就已经完成,可以启动程序后使用 Swagger 进行接口测试.
+- 同时代码我也会推送至 [GitHub](https://github.com/joesdu/MongoCRUD) 有需要参考的可以看看.
+- https://github.com/joesdu/MongoCRUD
+- 本文中使用的 MongoDB 的扩展和封装均已经通过更完善的方式在别的库中实现.前边已经提到过链接,欢迎使用.
+- https://www.nuget.org/packages/Hoyo.Mongo
+- 有什么疑问或者不明白的地方可以给我留言.

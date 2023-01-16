@@ -1,0 +1,107 @@
+# Linux 服务器 MongoDB 数据库备份
+
+### 登录服务器
+
+- 使用 SSH 工具登录服务器
+
+```shell
+ssh username@你服务器的ip地址 -p 你服务器ssh服务的端口
+```
+
+- 输入密码登录成功
+
+---
+
+### 下载 MongoDB Tools
+
+- 首先去[官方网站下载](https://www.mongodb.com/try/download/database-tools)自己服务器对应的工具版本,个人推荐使用 tgz 的包进行安装.
+  如:
+
+```shell
+wget https://fastdl.mongodb.org/tools/db/mongodb-database-tools-ubuntu2004-x86_64-100.4.1.tgz
+```
+
+- 解压压缩文件并将文件复制到对应目录
+
+```shell
+tar -zxvf mongodb-*-tools-*.tgz
+sudo cp <mongodb-database-tools-directory>/bin/* /usr/local/bin/
+```
+
+- 将下载好的文件放置到 Mongodb 相同的目录(/usr/local/bin/)推荐查看我之前的[Mongodb 安装教程](https://www.cnblogs.com/dygood/p/15017438.html)
+- 赋予[执行权限](https://www.runoob.com/linux/linux-comm-chmod.html)
+
+```shell
+sudo chmod 777 /usr/local/bin/mongodump
+```
+
+---
+
+### 数据库备份脚本
+
+- 在 Windows 或者 Linux 上写入如下脚本.sh
+
+```shell
+#!/bin/bash
+
+# Program:
+#   MongoDB Backup bash
+# History:
+# 2022-02-12 by Joe
+# Author: Joe
+
+PATH=/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:~/bin
+export PATH
+BACKDIR=/mongo_back
+# DUMP=/usr/local/bin/mongodump                       #mongodump备份文件执行路径
+OUT_DIR=$BACKDIR                                      #备份目录
+DATE=`date +%Y_%m_%d_%H_%M_%S`                        #获取当前系统时间
+DB_USER=dbuser                                        #数据库账号
+DB_PASS='dbpasswd'                                    #数据库密码
+AUTH_DB=admin                                         #认证数据库
+DB_IP=127.0.0.1                                       #数据库链接IP
+DB_PORT=27017                                         #数据库链接端口
+DAYS=3                                                #保留最近N+1天的备份
+
+mkdir -p $OUT_DIR/$DATE
+mongodump --host $DB_IP --port $DB_PORT -u $DB_USER -p $DB_PASS --authenticationDatabase $AUTH_DB -o $OUT_DIR/$DATE --gzip
+find $OUT_DIR/ -mtime +$DAYS -type d -de'l                  #删备份文件
+```
+
+- 将上述文件保存为 sh 文件,本例命名为 mongobak.sh
+- 生成上述 sh 文件后,放入到/root/bin 目录下
+- 赋予[执行权限](https://www.bing.com/search?q=chmod+)
+
+```shell
+sudo chmod 755 /home/joe/bin/mongobak.sh
+```
+
+### 调整文件格式
+
+- 在 Windows 下编辑的上述脚本可能会存在问题,造成如下错误
+  **/bin/bash^M: 坏的解释器: 没有那个文件或目录**
+  这个问题主要是由于 Linux 和 Windows 之间的换行符差异造成.可使用 sed -i 's/\r$//' filename 命令解决
+
+```shell
+sed -i 's/\r$//' /home/joe/bin/mongobak.sh
+```
+
+- 执行成功后,可以先直接使用 mongobak.sh 命令测试看下是否能够成功备份.若是无错误可以进行如下配置实现每天定点执行备份.
+
+---
+
+### 使用 crontab 执行每日定时备份
+
+- 若是系统中没有 crontab,需要自行先安装根据各系统的差异执行相应命令
+- 修改 crontab 的配置
+
+```shell
+crontab -e
+```
+
+- 插入如下语句
+- 0 2 \* \* \* /home/joe/bin/mongobak.sh
+- 该语句表示每天早上**2 点**整执行脚本备份数据库,若是想自定义其他时间,请自己[查询 crontab 命令](https://www.runoob.com/linux/linux-comm-crontab.html)
+- 将上述添加好后,添加 crontab 开机自启动,可执行 ntsysv 命令选择 crond.service 并保存
+
+自此所有配置就已经完成.等待每日自动备份即可.本教程中的脚本备份文件只会保留**5 日**并且是全数据库备份,若是需要自定义备份部分数据库,可自己参照上述脚本中的注释写相应的脚本.
