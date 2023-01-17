@@ -243,7 +243,7 @@ db.getCollection("family.info").updateOne({
 [HttpPut("UpdateOne")]
 public async Task UpdateOneElement()
 {
-    // 这里我们举得例子是将哆啦美的名字变更为日文名字.
+    // 这里我们举的例子是将哆啦美的名字变更为日文名字.
     // 这里我们假设查询参数同样是通过参数传入的,所以我们写出了如下代码.
     _ = await _db.FamilyInfo.UpdateOneAsync(
         c => c.Name == "野比家" & c.Members.Any(s => s.Index == 4),
@@ -437,7 +437,7 @@ db.getCollection("family.info").aggregate([{
 - 到这里本文的内容就全部结束了,讲的可能并不是特别详细,但是针对我目前项目中的情况都算是讲到了.
 - 同时 C#源码也会[同步上传到 GitHub,有兴趣的可以关注一下](https://github.com/joesdu/MongoCRUD)
 - https://github.com/joesdu/MongoCRUD
-- 其中 Unwind 的基础类,在 [Hoyo.Mongo](https://www.nuget.org/packages/Hoyo.Mongo) 库中也已经内置,若是使用该库,可以更方便的操作 MongoDB
+- 其中 Unwind 的基础类,在 [Hoyo.Mongo](https://www.nuget.org/packages/Hoyo.Mongo) 库中也已经内置,若是使用该库,可以更方便操作 MongoDB
 - https://www.nuget.org/packages/Hoyo.Mongo
 - [Hoyo.Mongo 源码地址](https://github.com/joesdu/Hoyo)
 - https://github.com/joesdu/Hoyo
