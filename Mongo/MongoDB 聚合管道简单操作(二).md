@@ -289,7 +289,7 @@ public async Task<dynamic> GetGroup()
 }
 ```
 
-- 其实第一次我用 C#的版本我也不知道如何写代码,是[参考了这个帖子](https://www.mongodb.com/community/forums/t/c-aggregation-group-by-string-and-select-last-by-date/9574)的内容
+- 其实第一次我用 C# 的版本我也不知道如何写代码,是[参考了这个帖子](https://www.mongodb.com/community/forums/t/c-aggregation-group-by-string-and-select-last-by-date/9574)的内容
 - https://www.mongodb.com/community/forums/t/c-aggregation-group-by-string-and-select-last-by-date/9574
 
 - 接下来就写一下常见的分页查询.
