@@ -437,3 +437,7 @@ db.getCollection("family.info").aggregate([{
 - 到这里本文的内容就全部结束了,讲的可能并不是特别详细,但是针对我目前项目中的情况都算是讲到了.
 - 同时 C#源码也会[同步上传到 GitHub,有兴趣的可以关注一下](https://github.com/joesdu/MongoCRUD)
 - https://github.com/joesdu/MongoCRUD
+- 其中 Unwind 的基础类,在 [Hoyo.Mongo](https://www.nuget.org/packages/Hoyo.Mongo) 库中也已经内置,若是使用该库,可以更方便的操作 MongoDB
+- https://www.nuget.org/packages/Hoyo.Mongo
+- [Hoyo.Mongo 源码地址](https://github.com/joesdu/Hoyo)
+- https://github.com/joesdu/Hoyo
