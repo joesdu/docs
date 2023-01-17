@@ -165,13 +165,11 @@ db.getCollection("person").aggregate([{
 
 ```json
 // 1
-// 1
 {
     "_id": ObjectId("63c636649be1fb6bb10cda32"),
     "性别": "男",
     "人数": 40
 }
-
 // 2
 {
     "_id": ObjectId("63c636649be1fb6bb10cda32"),
