@@ -37,9 +37,9 @@
 | $add  | 将数字相加以返回总和,或将数字和日期添加到返回新日期.如果将数字和日期相加,则处理以毫秒为单位的数字.接受任意数量的参数表达式,但最多一个表达式可以解析为日期. | Adds numbers to return the sum, or adds numbers and a date to return a new date. If adding numbers and a date, treats the numbers as milliseconds. Accepts any number of argument expressions, but at most, one expression can resolve to a date. |
 | $ceil | 返回大于或等于指定数字的最小整数                                                                                                                           | Returns the smallest integer greater than or equal to the specified number.                                                                                                                                                                       |
 | $pow  | 将数字提高到指定的指数                                                                                                                                     | Raises a number to the specified exponent.                                                                                                                                                                                                        |
-| $avg  | 返回数值的平均值.忽略非数值.在 5.0 版更改:在$setWindowFields 阶段.                                                                                         | Returns an average of numerical values. Ignores non-numeric values. Changed in version 5.0: Available in $setWindowFields stage.                                                                                                                  |
-| $max  | 返回每个组的最高表达式值.在 5.0 版更改:在$setWindowFields 阶段.                                                                                            | Returns the highest expression value for each group. Changed in version 5.0: Available in $setWindowFields stage.                                                                                                                                 |
-| $sum  | 返回数值的总和。忽略非数值.在 5.0 版更改:在$setWindowFields 阶段.                                                                                          | Returns a sum of numerical values. Ignores non-numeric values. Changed in version 5.0: Available in $setWindowFields stage.                                                                                                                       |
+| $avg  | 返回数值的平均值.忽略非数值.在 5.0 版更改:在 \$setWindowFields 阶段.                                                                                       | Returns an average of numerical values. Ignores non-numeric values. Changed in version 5.0: Available in \$setWindowFields stage.                                                                                                                 |
+| $max  | 返回每个组的最高表达式值.在 5.0 版更改:在 \$setWindowFields 阶段.                                                                                          | Returns the highest expression value for each group. Changed in version 5.0: Available in \$setWindowFields stage.                                                                                                                                |
+| $sum  | 返回数值的总和。忽略非数值.在 5.0 版更改:在 \$setWindowFields 阶段.                                                                                        | Returns a sum of numerical values. Ignores non-numeric values. Changed in version 5.0: Available in \$setWindowFields stage.                                                                                                                      |
 
 ---
 
@@ -179,7 +179,7 @@ db.getCollection("person").aggregate([{
 
 ```
 
-- 可以很容易的分析出,我们先执行了 $match 匹配了所有大于 40 岁的张三,然后使用 $group 将男女的人数计算出来了(其中使用了 $sum 运算符),然后再使用 $project 将结果转成了我们想要的格式.
+- 可以很容易的分析出,我们先执行了 \$match 匹配了所有大于 40 岁的张三,然后使用 \$group 将男女的人数计算出来了(其中使用了 \$sum 运算符),然后再使用 \$project 将结果转成了我们想要的格式.
 - 再来一个非常常用的分页,比如每页 3 个数据,我们查第 4 页的数据.并对年龄排倒叙,对性别排正序.同时年龄大于 30 岁.
 
 ```JavaScript
@@ -253,7 +253,7 @@ db.getCollection("person").aggregate([
 
 - 首先我们新建一个控制器 AggregateController.cs 为了和之前的 CRUD 区分.
 - 然后常规的使用依赖注入注入我们需要的 DBContext
-- 先实现一个简单的 $match ,也可以使用 find 函数进行查找,但是这里我们不这么干.这里使用 Aggregate
+- 先实现一个简单的 \$match ,也可以使用 find 函数进行查找,但是这里我们不这么干.这里使用 Aggregate
 
 ```csharp
 [HttpGet("Match")]

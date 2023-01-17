@@ -51,12 +51,12 @@
 
 ### 地理位置(Geospatial)
 
-| 名字           | 含义                                                | 英文原文                                                                                                                                      |
-| -------------- | --------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| $geoIntersects | 选择与 GeoJSON 几何体相交的几何体                   | Selects geometries that intersect with a GeoJSON geometry. The 2dsphere index supports $geoIntersects.                                        |
-| $geoWithin     | 在一个有边界的 GeoJSON 几何体中选择几何体           | Selects geometries within a bounding GeoJSON geometry. The 2dsphere and 2d indexes support $geoWithin.                                        |
-| $near          | 返回靠近某个点的地理空间对象.需要地理空间索引       | Returns geospatial objects in proximity to a point. Requires a geospatial index. The 2dsphere and 2d indexes support $near.                   |
-| $nearSphere    | 返回与球体上的点附近的地理空间对象.需要地理空间索引 | Returns geospatial objects in proximity to a point on a sphere. Requires a geospatial index. The 2dsphere and 2d indexes support $nearSphere. |
+| 名字           | 含义                                                | 英文原文                                                                                                                                       |
+| -------------- | --------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| $geoIntersects | 选择与 GeoJSON 几何体相交的几何体                   | Selects geometries that intersect with a GeoJSON geometry. The 2dsphere index supports \$geoIntersects.                                        |
+| $geoWithin     | 在一个有边界的 GeoJSON 几何体中选择几何体           | Selects geometries within a bounding GeoJSON geometry. The 2dsphere and 2d indexes support \$geoWithin.                                        |
+| $near          | 返回靠近某个点的地理空间对象.需要地理空间索引       | Returns geospatial objects in proximity to a point. Requires a geospatial index. The 2dsphere and 2d indexes support \$near.                   |
+| $nearSphere    | 返回与球体上的点附近的地理空间对象.需要地理空间索引 | Returns geospatial objects in proximity to a point on a sphere. Requires a geospatial index. The 2dsphere and 2d indexes support \$nearSphere. |
 
 ### 数组(Array)
 
@@ -81,12 +81,12 @@
 
 ### 投影运算符(Projection Operators)
 
-| 名字       | 含义                                                | 英文原文                                                                                |
-| ---------- | --------------------------------------------------- | --------------------------------------------------------------------------------------- |
-| $          | 投射一个数组中符合查询条件的第一个元素              | Projects the first element in an array that matches the query condition.                |
-| $elemMatch | 投射一个数组中符合指定的$elemMatch 条件的第一个元素 | Projects the first element in an array that matches the specified $elemMatch condition. |
-| $meta      | 投射在$text 操作中分配的文档分数                    | Projects the document's score assigned during $text operation.                          |
-| $slice     | 限制从一个数组中投射的元素的数量.支持跳过和限制分片 | Limits the number of elements projected from an array. Supports skip and limit slices.  |
+| 名字       | 含义                                                  | 英文原文                                                                                 |
+| ---------- | ----------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| $          | 投射一个数组中符合查询条件的第一个元素                | Projects the first element in an array that matches the query condition.                 |
+| $elemMatch | 投射一个数组中符合指定的 \$elemMatch 条件的第一个元素 | Projects the first element in an array that matches the specified \$elemMatch condition. |
+| $meta      | 投射在$text 操作中分配的文档分数                      | Projects the document's score assigned during $text operation.                           |
+| $slice     | 限制从一个数组中投射的元素的数量.支持跳过和限制分片   | Limits the number of elements projected from an array. Supports skip and limit slices.   |
 
 ### 杂项运算符(Miscellaneous Operators)
 
