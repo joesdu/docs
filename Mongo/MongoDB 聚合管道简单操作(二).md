@@ -61,7 +61,7 @@
 - 我将之前的数据都清除了,重新使用 InsertMany 函数插入了 100 个数据.
 
 ```csharp
-[HttpPost("many")]
+[HttpPost("Many")]
 public async Task<IEnumerable<Person>> InsertMany()
 {
     var list = new List<Person>();
