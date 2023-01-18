@@ -101,4 +101,151 @@ public class TransactionController : ControllerBase
 - 这次我们也不初始化数据了,直接在一个 API 中将事务,数据添加,修改和删除一起干了.
 - 比如我们先批量添加 100 个 猫咪 🐱 和 狗狗 🐕,然后将序号大于 50 的猫咪名称改成 Tom,狗狗的名称改成 Spike,然后将序号小于 10 的猫咪和狗狗都删掉.
 - Tom 和 Spike 都有了,下次给 Jerry 也安排上 😁(猫和老鼠角色)
--
+- 由于我们的 MongoDB 集群环境大于 4.4 版本.所以我们可以直接插入数据,并不需要事先创建集合.
+
+```csharp
+[HttpPost]
+public async Task Demo()
+{
+    var cats = new List<Cat>();
+    var dogs = new List<Dog>();
+    // 这个地方的语法是从Kotlin中学来的,使用CustomIntEnumeratorExtension.cs实现
+    foreach (var index in ..99)
+    {
+        cats.Add(new()
+        {
+            No = index,
+            Name = $"Cat-{index}",
+            Description = "Tom Cat"
+        });
+        dogs.Add(new()
+        {
+            No = index,
+            Name = $"Dog-{index}",
+            Description = "Spike Dog"
+        });
+    }
+    // 后期为了模拟异常,这里用一个try catch
+    // 这里就开始要用事务了.先获取 session
+    var session = await _db.Client.StartSessionAsync();
+    try
+    {
+        // 这里记住一定要开始事务,不然也不行.
+        session.StartTransaction();
+        // 这里的第一个参数一定要传,不然就不会使用事务.
+        await _db.Cat.InsertManyAsync(session, cats);
+        await _db.Dog.InsertManyAsync(session, dogs);
+        _ = await _db.Cat.UpdateManyAsync(session, _cbf.Gt(c => c.No, 50), _cbu.Set(c => c.Name, "Tom"));
+        _ = await _db.Dog.UpdateManyAsync(session, _dbf.Gt(c => c.No, 50), _dbu.Set(c => c.Name, "Spike"));
+        _ = await _db.Cat.DeleteManyAsync(session, c => c.No < 10);
+        _ = await _db.Dog.DeleteManyAsync(session, c => c.No < 10);
+        // 完成事务的操作后提交事务.
+        await session.CommitTransactionAsync();
+    }
+    catch (Exception)
+    {
+        // 若是发生异常,退出事务
+        await session.AbortTransactionAsync();
+    }
+}
+```
+
+- 执行上边的接口后,去数据库查看数据,发现均是按照我们的预期操作.
+
+```json
+// Cat数据
+...
+// 40
+{
+    "_id": ObjectId("63c7d456ac7bee95e4ca923d"),
+    "no": NumberInt("49"),
+    "name": "Cat-49",
+    "description": "Tom Cat"
+}
+// 41
+{
+    "_id": ObjectId("63c7d456ac7bee95e4ca923e"),
+    "no": NumberInt("50"),
+    "name": "Cat-50",
+    "description": "Tom Cat"
+}
+// 42
+{
+    "_id": ObjectId("63c7d456ac7bee95e4ca923f"),
+    "no": NumberInt("51"),
+    "name": "Tom",
+    "description": "Tom Cat"
+}
+// 43
+{
+    "_id": ObjectId("63c7d456ac7bee95e4ca9240"),
+    "no": NumberInt("52"),
+    "name": "Tom",
+    "description": "Tom Cat"
+}
+...
+// Gog数据
+...
+// 40
+{
+    "_id": ObjectId("63c7d456ac7bee95e4ca92a1"),
+    "no": NumberInt("49"),
+    "name": "Dog-49",
+    "description": "Spike Dog"
+}
+// 41
+{
+    "_id": ObjectId("63c7d456ac7bee95e4ca92a2"),
+    "no": NumberInt("50"),
+    "name": "Dog-50",
+    "description": "Spike Dog"
+}
+// 42
+{
+    "_id": ObjectId("63c7d456ac7bee95e4ca92a3"),
+    "no": NumberInt("51"),
+    "name": "Spike",
+    "description": "Spike Dog"
+}
+// 43
+{
+    "_id": ObjectId("63c7d456ac7bee95e4ca92a4"),
+    "no": NumberInt("52"),
+    "name": "Spike",
+    "description": "Spike Dog"
+}
+```
+
+- 最后我们试试删除所有数据,和修改一些数据,并在程序中抛出异常,观察事务失败的情况.
+- 先将序号小于 50 的猫咪和狗狗.修改名称,Cat 改成 Spike,Dog 改成 Tom,然后再将所有数据全删除.
+
+```csharp
+[HttpPost]
+public async Task WithError()
+{
+    var session = await _db.Client.StartSessionAsync();
+    try
+    {
+        // 这里记住一定要开始事务,不然也不行.
+        session.StartTransaction();
+        _ = await _db.Cat.UpdateManyAsync(session, _cbf.Lte(c => c.No, 50), _cbu.Set(c => c.Name, "Spike"));
+        _ = await _db.Dog.UpdateManyAsync(session, _dbf.Lte(c => c.No, 50), _dbu.Set(c => c.Name, "Tom"));
+        _ = await _db.Cat.DeleteManyAsync(session, _ => true);
+        _ = await _db.Dog.DeleteManyAsync(session, _ => true);
+        throw new("error");
+        // 完成事务的操作后提交事务.
+        await session.CommitTransactionAsync();
+    }
+    catch (Exception)
+    {
+        // 若是发生异常,退出事务
+        await session.AbortTransactionAsync();
+    }
+}
+```
+
+- 执行后,再去数据库查看数据,会发现并没有什么变化.
+- 到这里,事务的使用,和异常后取消事务都展示了,并测试了集群环境中的事务支持是非常 OK 的,所以说 NoSQL 数据库没有事务的说法也不成立了.
+- 不过需要注意的是事务只支持副本集集群和分片集群,单机的话写这样的代码可能不会报错,但是和不用事务的效果应该一样的.也就是说后续的操作失败了,之前的操作并不会回退.造成数据异常.
+- 事务的简单使用就介绍到这里了,想详细了解它的原理和一些细节的小伙伴推荐看看官网,并且每个版本发生变化的时候,就看下变更日志.
+- C# 源码也已经同步到 GitHub,有需要的可以参考和关注一下.
