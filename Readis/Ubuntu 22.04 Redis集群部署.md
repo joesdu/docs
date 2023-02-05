@@ -17,8 +17,16 @@ sudo apt update
 sudo apt install redis
 ```
 
-- 每台服务器安装完成后,先调整 redis 配置文件
-- 由于我们是使用 apt 包管理工具安装的 redis,所以无法使用自定义配置文件来启动 redis,所以我们得更改默认配置文件
+- 新版 Ubuntu22.04 以后推荐使用如下命令,新版的 Ubuntu 好像是不推荐使用 gpg 密钥了.
+
+```shell
+sudo add-apt-repository ppa:redislabs/redis
+sudo apt update
+sudo apt install redis
+```
+
+- 每台服务器安装完成后,先调整 Redis 配置文件
+- 由于我们是使用 apt 包管理工具安装的 Redis,所以无法使用自定义配置文件来启动 Redis,所以我们得更改默认配置文件
 
 ```shell
 sudo nano /etc/redis/redis.conf
