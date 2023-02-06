@@ -1,3 +1,5 @@
+> 一般来说,如果只是为了学习 RabbitMQ 或者验证业务工程的正确性那么在本地环境或者测试环境上使用其单实例部署就可以了,但是出于 MQ 中间件本身的可靠性、并发性、吞吐量和消息堆积能力等问题的考虑,在生产环境上一般都会考虑使用 RabbitMQ 的集群方案.
+
 由于为了学习 RabbitMQ 的使用,我在我服务器上安装了 RabbitMQ.
 目前服务器配置如下:
 
@@ -23,40 +25,23 @@
 
 ###### 安装 RabbitMQ
 
-- 要使用RabbitMQ首先肯定需要先在服务器上安装.
+- 要使用 RabbitMQ 首先肯定需要先在服务器上安装.
 - 更新软件源
+
 ```shell
 sudo apt update
 ```
+
 - 安装工具软件
+
 ```bash
 sudo apt install curl gnupg apt-transport-https -y
 ```
-- 查看apt版本
-```bash
-apt -v
-```
-- 此时应该注意apt的版本
 
-**当apt版本大于1.1**:
-```bash
-# 添加GPG Key
-curl -fsSL https://packagecloud.io/rabbitmq/rabbitmq-server/gpgkey | sudo gpg --dearmor -o /etc/apt/keyrings/rabbitmq_rabbitmq-server-archive-keyring.gpg
-# 创建软件源
-echo -e "deb [signed-by=/etc/apt/keyrings/rabbitmq_rabbitmq-server-archive-keyring.gpg] https://packagecloud.io/rabbitmq/rabbitmq-server/ubuntu $(lsb_release -cs) main\ndeb-src [signed-by=/etc/apt/keyrings/rabbitmq_rabbitmq-server-archive-keyring.gpg] https://packagecloud.io/rabbitmq/rabbitmq-server/ubuntu $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/rabbitmq-server.list
-```
-**当apt版本小于1.1**,这里我就不写1.1版本的处理方式了,避免有人误操作,可以按照[这个页面](https://packagecloud.io/rabbitmq/rabbitmq-server/install#manual)的内容自行添加1.1版本的
+- 由于官网的安装方式有点复杂,并且有个版本更新存在问题,所以这里使用我制作的一键安装脚本安装 RabbitMQ
 
-- 然后执行更新软件源以及安装所需软件包
-```bash
-# 更新
-sudo apt update -y
-
-## 安装Erlang软件包
-sudo apt install -y erlang-base erlang-asn1 erlang-crypto erlang-eldap erlang-ftp erlang-inets erlang-mnesia erlang-os-mon erlang-parsetools erlang-public-key erlang-runtime-tools erlang-snmp erlang-ssl erlang-syntax-tools erlang-tftp erlang-tools erlang-xmerl
-
-## 安装 rabbitmq-server 以及他的依赖包
-sudo apt install rabbitmq-server -y --fix-missing
+```shell
+curl -s https://raw.githubusercontent.com/joesdu/rabbitmq-server-install-bash/main/install.sh | sudo bash
 ```
 
 - 安装完成后,再执行相关命令启动,以及其他常用命令
@@ -80,7 +65,7 @@ sudo service rabbitmq-server status
 sudo rabbitmq-plugins enable rabbitmq_management
 ```
 
-- 由于 guest 用户默认只能在 localhost 登录，所以我们需要创建一个新的用户.
+- 由于 guest 用户默认只能在 localhost 登录,所以我们需要创建一个新的用户.
 
 ```shell
 ##设置账号密码
@@ -304,17 +289,17 @@ sudo systemctl enable haproxy
 
 ```help
 rabbitmqctl set_policy [-p Vhost] Name Pattern Definition [Priority]
--p Vhost： 可选参数，针对指定vhost下的queue进行设置
+-p Vhost： 可选参数,针对指定vhost下的queue进行设置
 Name: policy的名称
 Pattern: queue的匹配模式(正则表达式)
-Definition：镜像定义，包括三个部分ha-mode, ha-params, ha-sync-mode
-        ha-mode:指明镜像队列的模式，有效值为 all/exactly/nodes
+Definition：镜像定义,包括三个部分ha-mode, ha-params, ha-sync-mode
+        ha-mode:指明镜像队列的模式,有效值为 all/exactly/nodes
             all：表示在集群中所有的节点上进行镜像
-            exactly：表示在指定个数的节点上进行镜像，节点的个数由ha-params指定
-            nodes：表示在指定的节点上进行镜像，节点名称通过ha-params指定
-        ha-params：作为参数，为ha-mode的补充
-        ha-sync-mode：进行队列中消息的同步方式，有效值为automatic和manual
-priority：可选参数，policy的优先级
+            exactly：表示在指定个数的节点上进行镜像,节点的个数由ha-params指定
+            nodes：表示在指定的节点上进行镜像,节点名称通过ha-params指定
+        ha-params：作为参数,为ha-mode的补充
+        ha-sync-mode：进行队列中消息的同步方式,有效值为automatic和manual
+priority：可选参数,policy的优先级
 ```
 
 - 使用命令的方式
