@@ -22,6 +22,7 @@ worker: {
 - 首先配置好 3 台服务器.然后使用 XShell 或者类似工具链接上每一台服务器.
 - 安装 micro-k8s
 - micro-k8s 的安装非常简单,可以参考[GitHub 的 Readme.md](https://github.com/ubuntu/microk8s)
+- https://github.com/ubuntu/microk8s
 - 安装命令如下:
 
 ```shell
@@ -85,9 +86,9 @@ sudo kubectl get services
 
 我这里的环境下会输出如下信息:(这里的 worker 和 master 的设置下边会讲到.一开始所有节点 ROLES 信息应该是一致的)
 NAME STATUS ROLES AGE VERSION
-k8s-03 Ready worker 11h v1.23.3-2+d441060727c463
-k8s-01 Ready master 11h v1.23.3-2+d441060727c463
-k8s-02 Ready worker 11h v1.23.3-2+d441060727c463
+k8s-02 Ready worker 113d v1.25.6
+k8s-01 Ready master 113d v1.25.6
+k8s-03 Ready worker 113d v1.25.6
 
 - 接下来设置 master 节点和 worker 节点
 
@@ -108,19 +109,24 @@ sudo kubectl label node k8s-03 node-role.kubernetes.io/worker=worker
 sudo kubectl get nodes
 ```
 
-- 获取 k8s 的 config 信息,使用[Lens](https://k8slens.dev/)
+- 获取 k8s 的 config 信息,使用[Lens](https://k8slens.dev)
+- https://k8slens.dev
+- Lens 开始收费了,所以这里推荐他的同款替代品[OpenLens](https://github.com/MuhammedKalkan/OpenLens/releases)
+- https://github.com/MuhammedKalkan/OpenLens/releases
 
 ```shell
 sudo microk8s.config
 ```
 
-- 为主节点添加IP并重新生成证书
-- 注意: 当前microk8s版本1.21 有个bug, 需要修改/var/snap/microk8s/current/var/lock/no-cert-reissue文件,避免其无法触发apiserver更新csr
+- 为主节点添加 IP 并重新生成证书
+- 注意: MicroK8s 版本 1.21 有个 bug(目前我是 1.25.6 所以没执行这句), 需要修改/var/snap/microk8s/current/var/lock/no-cert-reissue 文件,避免其无法触发 apiserver 更新 csr
+
 ```shell
 sudo mv /var/snap/microk8s/current/var/lock/no-cert-reissue /var/snap/microk8s/current/var/lock/no-cert-reissue.back
 ```
 
-- 编辑/var/snap/microk8s/current/certs/csr.conf.template文件, 找到alt_names节点, 刚安装完毕一般只到IP.3, 我们就可以再往后加IP.4 IP.5   一般就加其他的局域网IP,或者映射后的公网IP之类的
+- 编辑 /var/snap/microk8s/current/certs/csr.conf.template 文件, 找到 alt_names 节点, 刚安装完毕一般只到 IP.3, 我们就可以再往后加 IP.4 IP.5 一般就加其他的局域网 IP,或者映射后的公网 IP 之类的
+
 ```conf
 [ alt_names ]
 DNS.1 = kubernetes
@@ -133,16 +139,21 @@ IP.2 = 10.152.183.1
 IP.3 = 192.168.31.121
 IP.4 = 192.168.192.121
 ```
+
 复制代码
-更改完毕执行下 
+更改完毕执行下
+
 ```shell
 ll /var/snap/microk8s/current/certs/csr.conf*
 ```
-- 查看下csr.conf和csr.conf.rendered更新时间是不是大于等于csr.conf.template, 是的话就说明重新生成了csr,然后再执行
+
+- 查看下 csr.conf 和 csr.conf.rendered 更新时间是不是大于等于 csr.conf.template, 是的话就说明重新生成了 csr,然后再执行
 
 - 最后再把前边改了的文件名改回去,当然,如果后续版本修复了这个问题也就不用再改名称了
+
 ```shell
 sudo mv /var/snap/microk8s/current/var/lock/no-cert-reissue.back /var/snap/microk8s/current/var/lock/no-cert-reissue
 ```
+
 - 复制输出的内容,添加到 lens 的 config 文件中即可链接 micro-k8s 了
 - 使用 Lens 链接成功后,可以进入集群的 Setting 设置中开启一些服务监控集群状态.
