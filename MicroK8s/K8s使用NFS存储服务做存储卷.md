@@ -1,0 +1,253 @@
+> 创建背景,最近想学习 K8s 的 PV 和 PVC.本来打算学习[Ceph](https://ceph.io/en)但是,这个东西部署确实有点难搞.所以选了相对简单的 NFS 作为文件存储服务.本次还是使用我们的老朋友 ESXi 开一个虚拟机.安装好 Ubuntu Server 22.04 LTS 后.就开始一系列操作了.本文基于 Ubuntu microk8s.
+
+### 安装部署 NFS 服务器
+
+- 首先说一下我的网络环境,内网地址段是 192.168.2.0/24 本 NFS 服务器的 IP 设置为 192.168.2.13
+- 首先安装 NFS 所需的软件.
+
+```shell
+sudo apt install nfs-kernel-server
+```
+
+- 安装完成后,NFS 服务将自动启动.
+- 在 Ubuntu 20.04+上,NFS V2 被禁用.V3 和 V4 已启用.可以通过运行以下命令来验证:
+
+```shell
+sudo cat /proc/fs/nfsd/versions
+```
+
+- 会输出大概是如下内容
+
+```text
+-2 +3 +4 +4.1 +4.2
+```
+
+- NFSv2 现在已经很老了,没有理由启用它.NFS 服务器配置在/etc/default/nfs-kernel-server 和/etc/default/nfs-common 文件中定义.对于大多数情况,默认设置就足够了.
+- 安装好后,我们就需要创建一个文件夹用于保存数据存放的地方.这里我选择/data/nfs 目录.可以根据自己的情况和喜好设置.
+
+```shell
+# 创建文件夹
+sudo mkdir -p /opt/nfsv4/data
+sudo mkdir -p /opt/nfsv4/back
+sudo mkdir -p /data/nfs
+```
+
+- NFSv4 是将文件存储到/opt/nfsv4/data 中的,而我们希望将这个文件挂载到/data/nfs 中,所以我们需要创建挂载.打开/etc/fstab 添加如下内容
+
+```shell
+sudo nano /etc/fstab
+```
+
+```text
+# NFS Server
+/data/nfs /opt/nfsv4/data none bind 0 0
+```
+
+- 这样我们就不需要每次重启系统后再手动挂载了.
+- 然后我们添加一个导出
+
+```shell
+sudo nano /etc/exports
+
+# 添加如下内容,需要根据自己的实际情况调整文件夹目录和IP以及读写权限
+/data/nfs 192.168.2.0/24(rw,sync,no_root_squash,no_subtree_check,crossmnt,fsid=0)
+```
+
+- 在这里,除了 no_root_squash 之外,对两个目录使用相同的配置选项.看看每个选项的含义:
+
+| 代码             | 说明                                                                                                                                                                                    |
+| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| rw               | 此选项为客户端计算机提供对卷的读写访问权限.                                                                                                                                             |
+| sync             | 此选项强制 NFS 在回复之前将更改写入磁盘.这会产生更稳定和一致的环境,因为回复反映了远程卷的实际状态.但是,它也降低了文件操作的速度.                                                        |
+| no_subtree_check | 此选项防止子树检查,这是一个过程,其中 主机 必须检查文件是否在每个请求的导出树中实际上仍然可用.如果在 客户端 打开文件时重命名文件,这可能会导致很多问题.在几乎所有情况下,最好禁用子树检查. |
+| no_root_squash   | 默认情况下,NFS 将来自 root 用户的请求远程转换为服务器上的非特权用户.这是为了防止 client 上的 root 帐户将 host 的文件系统用作 root 的安全功能. no_root_squash 对某些共享禁用此行为.      |
+
+- 完成更改后,保存并关闭文件. 然后,要使您配置的客户端可以使用共享,请使用以下命令重新启动 NFS 服务器:
+
+```shell
+sudo systemctl restart nfs-kernel-server
+```
+
+- 由于 NFS 会将 客户端 上的任何 root 操作转换为 nobody:nogroup 凭据作为安全措施.因此,需要更改目录所有权以匹配这些凭据.
+
+```shell
+sudo chown nobody:nogroup /data/nfs
+sudo chown nobody:nogroup /data
+```
+
+- 同时为了保险起见,我们直接给/data 目录及其子目录搞一个读写权限(偷懒直接开个 777)
+
+```shell
+sudo chmod 777 -R /data
+```
+
+- 最后我们再开启防火墙的放行.若是没开启防火墙就无需关注了
+
+```shell
+sudo ufw allow from '192.168.2.0/24' to any port nfs
+```
+
+- 最后为了保险我们再重启一下服务.
+
+```shell
+sudo systemctl restart nfs-kernel-server
+```
+
+- 这样我们 NFS 服务端就安装完成了.接下来我们配置客户端
+- 首先客户端也需要安装一个组件.
+
+```shell
+sudo apt install nfs-common
+```
+
+- 接下来使用命令就可以挂载了,若是使用 k8s 等服务,就可以不用挂载到宿主机.使用 PV,PVC 就行了.具体方法可参考[Ubuntu MicroK8s 挂载教程](https://microk8s.io/docs/nfs)该教程同样介绍了如何安装 NFS 服务
+
+```shell
+sudo mkdir -p /mnt/nfs
+sudo mount -t nfs 192.168.2.13:/data/nfs /mnt/nfs
+```
+
+- 最后还是开启自启.
+
+```shell
+sudo systemctl enable nfs-kernel-server
+```
+
+### K8s 使用 NFS 服务做存储卷
+
+- 安装 NFS 的 CSI 驱动程序,我们将使用上游 NFS CSI 驱动程序.首先,我们将使用官方 Helm chart 部署 NFS 配置器.启用 Helm3 插件(如果尚未启用)并添加 NFS CSI 驱动程序的存储库:
+
+```shell
+sudo microk8s enable helm3
+sudo microk8s helm3 repo add csi-driver-nfs https://raw.githubusercontent.com/kubernetes-csi/csi-driver-nfs/master/charts
+sudo microk8s helm3 repo update
+```
+
+- 然后,在命名空间下安装 Helm chart：kube-system
+
+```shell
+sudo microk8s helm3 install csi-driver-nfs csi-driver-nfs/csi-driver-nfs \
+    --namespace kube-system \
+    --set kubeletDir=/var/snap/microk8s/common/var/lib/kubelet
+```
+
+- 部署 Helm chart 后,使用以下命令等待 CSI 控制器和节点 Pod 出现
+- 若是设置过别名一般可不加 microk8s
+
+```shell
+sudo microk8s kubectl wait pod --selector app.kubernetes.io/name=csi-driver-nfs --for condition=ready --namespace kube-system
+```
+
+- 一旦成功,就会输出类似如下信息:
+
+```text
+pod/csi-nfs-controller-67bd588cc6-7vvn7 condition met
+pod/csi-nfs-node-qw8rg condition met
+```
+
+- 此时,您还应该能够列出 Kubernetes 集群中可用的 CSI 驱动程序
+
+```shell
+sudo microk8s kubectl get csidrivers
+```
+
+- 按理说会输出类似如下信息:
+
+```text
+NAME             ATTACHREQUIRED   PODINFOONMOUNT   STORAGECAPACITY   TOKENREQUESTS   REQUIRESREPUBLISH   MODES        AGE
+nfs.csi.k8s.io   false            false            false             <unset>         false               Persistent   105d
+```
+
+### 为 NFS 创建存储类 PV, PVC
+
+- 接下来,我们需要创建一个使用 nfs.csi.k8s.io CSI 驱动程序的 Kubernetes 存储类.假设您已配置 NFS 共享 /data/nfs，并且 NFS 服务器的地址为 192.168.2.13 ，请创建以下文件：
+
+```yaml
+# sc-nfs.yaml
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: nfs-csi
+provisioner: nfs.csi.k8s.io
+parameters:
+  server: 192.168.2.13
+  share: /data/nfs
+reclaimPolicy: Delete
+volumeBindingMode: Immediate
+#mountOptions:
+#  - hard
+#  - nfsvers=4.1
+```
+
+> **注意**:上述 YAML 的最后一行表示特定版本的 NFS.这应该与正在使用的 NFS 服务器的版本相匹配,如果您使用的是现有服务,请检查它使用的版本并相应地进行调整.
+
+- 然后使用以下命令将其应用于您的 MicroK8s 群集:
+
+```shell
+# 根据自己的路径来写
+sudo kubectl apply -f /home/joe/k8s.conf/sc-nfs.yaml
+```
+
+- 创建新的 PVC
+- 最后一步是使用存储类创建新的 PersistentVolumeClaim.这就像在 PVC 中指定 nfs-csistorageClassName: nfs-csi 定义一样简单,例如:
+
+```yaml
+# pvc-nfs.yaml
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: my-pvc
+spec:
+  storageClassName: nfs-csi
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 5Gi
+```
+
+- 最后再应用这个 PVC yaml
+
+```shell
+# 和上边一样,文件路径根据自己的情况填写
+sudo kubectl apply -f /home/joe/k8s.conf/pvc-nfs.yaml
+```
+
+- 如果一切配置都正确,那么应该可以检查我们的 PVC,执行下方命令
+
+```shell
+sudo microk8s kubectl describe pvc my-pvc
+```
+
+- 应该会输出类似如下信息:
+
+```text
+Name:          my-pvc
+Namespace:     default
+StorageClass:  nfs-csi
+Status:        Bound
+Volume:        pvc-5676d353-4d46-49a2-b7ff-bdd4603d2c06
+Labels:        <none>
+Annotations:   pv.kubernetes.io/bind-completed: yes
+               pv.kubernetes.io/bound-by-controller: yes
+               volume.beta.kubernetes.io/storage-provisioner: nfs.csi.k8s.io
+               volume.kubernetes.io/storage-provisioner: nfs.csi.k8s.io
+Finalizers:    [kubernetes.io/pvc-protection]
+Capacity:      5Gi
+Access Modes:  RWO
+VolumeMode:    Filesystem
+Used By:       <none>
+Events:
+  Type     Reason                 Age                    From                                                           Message
+  ----     ------                 ----                   ----                                                           -------
+  Normal   ExternalProvisioning   2m59s (x2 over 2m59s)  persistentvolume-controller                                    waiting for a volume to be created, either by external provisioner "nfs.csi.k8s.io" or manually created by system administrator
+  Normal   Provisioning           2m58s (x2 over 2m59s)  nfs.csi.k8s.io_andromeda_61e4b876-324d-4f52-a5c3-f26047fbbc97  External provisioner is provisioning volume for claim "default/my-pvc"
+  Normal   ProvisioningSucceeded  2m58s                  nfs.csi.k8s.io_andromeda_61e4b876-324d-4f52-a5c3-f26047fbbc97  Successfully provisioned volume pvc-5676d353-4d46-49a2-b7ff-bdd4603d2c06
+```
+
+- 就是这样!现在,您可以使用此 PVC 在 MicroK8s 群集上运行有状态工作负载.
+
+* 参考文档:
+  - [Use NFS for Persistent Volumes](https://microk8s.io/docs/nfs)
+  - https://microk8s.io/docs/nfs
