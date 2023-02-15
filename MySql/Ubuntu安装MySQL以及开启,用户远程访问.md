@@ -1,9 +1,9 @@
 话不多说直接上操作指令.
 
 - 先装好 Ubuntu 20.04 Server ,并使用 SSH 进入终端.
-- **千万注意:**千万别用预览版的 Ubuntu 安装,
+- **千万注意:** 千万别用预览版的 Ubuntu 安装,
 - 检查系统更新,并更新至最新,并安装 MySQL Server 服务
-  **先决条件:**安装 MySQL 服务
+  **先决条件:** 安装 MySQL 服务
 
 ```shell
 sudo apt update
@@ -31,7 +31,7 @@ secure enough. Would you like to setup VALIDATE PASSWORD component?
 Press y|Y for Yes, any other key for No: y
 ```
 
-有三个级别的密码验证策略,低级,中级,高级.如果你想设置验证密码插件,按**y**或者其他任何按键,移动到下一个步骤:
+有三个级别的密码验证策略,低级,中级,高级.如果你想设置验证密码插件,按 **y** 或者其他任何按键,移动到下一个步骤:
 
 ```
 There are three levels of password validation policy:
@@ -53,14 +53,14 @@ New password:
 Re-enter new password:
 ```
 
-如果你设置了验证密码插件,这个脚本将会显示你的新密码强度.输入**y**确认密码:
+如果你设置了验证密码插件,这个脚本将会显示你的新密码强度.输入 **y** 确认密码:
 
 ```
 Estimated strength of the password: 50
 Do you wish to continue with the password provided?(Press y|Y for Yes, any other key for No) : y
 ```
 
-下一步,你将被要求移除任何匿名用户,限制 root 用户访问本地机器,移除测试数据库并且重新加载权限表.你应该对所有的问题回答**y**
+下一步,你将被要求移除任何匿名用户,限制 root 用户访问本地机器,移除测试数据库并且重新加载权限表.你应该对所有的问题回答 **y**
 
 ---
 
