@@ -44,12 +44,12 @@ function fColorGradualChange(startColor, endColor, num) {
   } else if (rgb.test(startColor)) {
     endRGB = endColor.substring(3, 15).split(",");
   }
-  let startR = startRGB[0],
-    startG = startRGB[1],
-    startB = startRGB[2];
-  let endR = endRGB[0],
-    endG = endRGB[1],
-    endB = endRGB[2];
+  let startR = startRGB[0];
+  let startG = startRGB[1];
+  let startB = startRGB[2];
+  let endR = endRGB[0];
+  let endG = endRGB[1];
+  let endB = endRGB[2];
   let sR = (endR - startR) / num;
   let sG = (endG - startG) / num;
   let sB = (endB - startB) / num;
@@ -80,12 +80,9 @@ function fAnalysisRGB(temp) {
  *   rgb转hex
  */
 function fColorToHex(r, g, b) {
-  return (
-    "#" +
-    fAddZero(r.toString(16)) +
-    fAddZero(g.toString(16)) +
-    fAddZero(b.toString(16))
-  );
+  return `#${fAddZero(r.toString(16))}${fAddZero(g.toString(16))}${fAddZero(
+    b.toString(16)
+  )}`;
 }
 /**
  *   加0补位
