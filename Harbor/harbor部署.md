@@ -14,11 +14,8 @@
 - 首先我们在 VPS 或者 ESXi 中安装好操作系统.并安装好 docker 引擎和 docker-compose.
 - docker-compose 需要安装新版的 V2.
 - 至于 [Docker Engine](https://docs.docker.com/engine/install/ubuntu) 和 [Docker Compose](https://docs.docker.com/compose/install/linux) 的配置可以参考 docker 官网,这里不再赘述.参考链接如下:
-- Docker Engine: https://docs.docker.com/engine/install/ubuntu
-- Docker Compose: https://docs.docker.com/compose/install/linux
 - harbor 我们这里选择最新版本,因为 2.5.2 之后的版本才支持 docker-compose v2(没记错的话.)写这篇文章的时候发现 harbor 都已经 2.7.0 了.不过这个都不影响我们使用.
 - 首先在官网点击[Download Now](https://github.com/goharbor/harbor/releases)会跳转到 GitHub 的 Release,选择自己喜欢的版本下载就行.本文以 2.7.0 版本为例.
-- https://github.com/goharbor/harbor/releases
 
 ```shell
 sudo wget https://github.com/goharbor/harbor/releases/download/v2.7.0/harbor-offline-installer-v2.7.0.tgz
