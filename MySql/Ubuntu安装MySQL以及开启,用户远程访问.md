@@ -1,6 +1,6 @@
 话不多说直接上操作指令.
 
-- 先装好 Ubuntu 20.04 Server ,并使用 SSH 进入终端.
+- 先装好 Ubuntu 22.04 Server ,并使用 SSH 进入终端.
 - **千万注意:** 千万别用预览版的 Ubuntu 安装,
 - 检查系统更新,并更新至最新,并安装 MySQL Server 服务
   **先决条件:** 安装 MySQL 服务
@@ -17,7 +17,7 @@ sudo apt install mysql-server -y
 sudo mysql -u root -p
 ```
 
-- 输入密码进入后,执行如下命令,调整 root 账户
+- 输入密码进入后(没密码就算),执行如下命令,调整 root 账户
 
 ```sql
 use mysql;
@@ -39,7 +39,7 @@ select host, user, authentication_string, plugin from user;
 
 ```sql
 use mysql;
-create user 'root'@'%' identified by '密码';
+create user 'xiaokeai'@'%' identified by '密码';
 flush privileges;
 ```
 
@@ -47,14 +47,14 @@ flush privileges;
 - 修改密码
 
 ```sql
-alter user 'root'@'%' identified by '新密码';
+alter user 'xiaokeai'@'%' identified by '新密码';
 flush privileges;
 ```
 
 - 授权
 
 ```sql
-grant all privileges on *.* to 'root'@'%' with grant option;
+grant all privileges on *.* to 'xiaokeai'@'%' with grant option;
 ```
 
 with gran option 表示该用户可给其它用户赋予权限,但不可能超过该用户已有的权限
@@ -63,38 +63,38 @@ with gran option 表示该用户可给其它用户赋予权限,但不可能超�
 all privileges 可换成 select,update,insert,delete,drop,create 等操作,如:
 
 ```sql
-grant select,insert,update,delete on *.* to 'root'@'%';
+grant select,insert,update,delete on *.* to 'xiaokeai'@'%';
 ```
 
-第一个\*表示通配数据库,可指定新建用户只可操作的数据库,如:
+第一个 \* 表示通配数据库,可指定新建用户只可操作的数据库,如:
 
 ```sql
-grant all privileges on 数据库.* to 'root'@'%';
+grant all privileges on 数据库.* to 'xiaokeai'@'%';
 ```
 
-第二个\*表示通配表,可指定新建用户只可操作的数据库下的某个表,如:
+第二个 \* 表示通配表,可指定新建用户只可操作的数据库下的某个表,如:
 
 ```sql
-grant all privileges on 数据库.指定表名 to 'root'@'%';
+grant all privileges on 数据库.指定表名 to 'xiaokeai'@'%';
 ```
 
 - 查看用户授权信息
 
 ```sql
-show grants for 'root'@'%';
+show grants for 'xiaokeai'@'%';
 ```
 
 - 撤销权限
 
 ```sql
 # 用户有什么权限就撤什么权限
-revoke all privileges on *.* from 'root'@'%';
+revoke all privileges on *.* from 'xiaokeai'@'%';
 ```
 
 - 删除用户
 
 ```sql
-drop user 'root'@'%';
+drop user 'xiaokeai'@'%';
 ```
 
 - 执行后应该就已经可以了.
@@ -106,7 +106,7 @@ drop user 'root'@'%';
 sudo nano /etc/mysql/mysql.conf.d/mysqld.cnf
 ```
 
-修改**bind-address**为 0.0.0.0 后保存退出.
+修改 **bind-address** 为 0.0.0.0 后保存退出.
 
 - 重启 MySQL 服务
 
