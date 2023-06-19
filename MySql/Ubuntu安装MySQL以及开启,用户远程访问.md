@@ -23,6 +23,7 @@ sudo mysql -u root -p
 use mysql;
 select host, user, authentication_string, plugin from user;
 update user set host='%' where user='root';
+flush privileges;
 alter user 'root'@'%' identified with mysql_native_password by '你的密码';
 flush privileges;
 ```
