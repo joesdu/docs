@@ -87,6 +87,12 @@ sudo fdisk /dev/sda
 sudo partprobe
 ```
 
+- 使用 lsblk 命令查看磁盘信息,我这里可以看到新增的磁盘是/dev/sda4
+
+```bash
+lsblk
+```
+
 - 扩展 VG
 
 ```shell
