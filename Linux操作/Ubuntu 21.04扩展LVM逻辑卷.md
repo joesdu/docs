@@ -127,7 +127,8 @@ sudo lvextend /dev/mapper/ubuntu--vg-ubuntu--lv /dev/vdb1
 - 扩展磁盘占用所有空间并重新计算
 
 ```shell
-sudo lvextend -l +100%FREE /dev/mapper/ubuntu--vg-ubuntu--lv && sudo resize2fs /dev/mapper/ubuntu--vg-ubuntu--lv
+sudo lvextend -l +100%FREE /dev/mapper/ubuntu--vg-ubuntu--lv
+sudo resize2fs /dev/mapper/ubuntu--vg-ubuntu--lv
 ```
 
 - 查看容量
