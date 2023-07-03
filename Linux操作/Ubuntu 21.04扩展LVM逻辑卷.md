@@ -89,7 +89,7 @@ sudo fdisk /dev/vdb
 sudo partprobe
 ```
 
-- 使用 lsblk 命令查看磁盘信息,我这里可以看到新增的磁盘是/dev/sda4
+- 使用 lsblk 命令查看磁盘信息,我这里可以看到新增的磁盘是/dev/vdb1
 
 ```bash
 lsblk
