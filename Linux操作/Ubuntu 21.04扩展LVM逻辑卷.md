@@ -69,7 +69,9 @@ df -h
 ```shell
 sudo fdisk -l
 ```
-- 可能会出现什么GPT格式问题
+
+- 可能会出现什么 GPT 格式问题
+
 ```shell
 sudo parted -l
 ```
@@ -77,7 +79,7 @@ sudo parted -l
 - 扩展分区 这里依据实际情况
 
 ```shell
-sudo fdisk /dev/sda 
+sudo fdisk /dev/vdb
 ```
 
 - 根据提示大概是依次输入 n , p ,w 即可成功创建分区.
@@ -90,7 +92,7 @@ sudo partprobe
 - 扩展 VG
 
 ```shell
-sudo pvcreate /dev/sda4
+sudo pvcreate /dev/vdb1
 ```
 
 - 查看 vgs 然后把 sda4 加入到 LVM 组中
@@ -107,20 +109,19 @@ ubuntu-vg   1   1   0 wz--n- <199.00g    0
 ```
 
 ```shell
-sudo vgextend ubuntu-vg /dev/sda4
+sudo vgextend ubuntu-vg /dev/vdb1
 ```
 
 - 扩展 LV(其中 mapper 后边的名称需要根据实际情况来,不同的系统应该不一样.)
 
 ```shell
-sudo lvextend /dev/mapper/ubuntu--vg-ubuntu--lv /dev/sda4
+sudo lvextend /dev/mapper/ubuntu--vg-ubuntu--lv /dev/vdb1
 ```
 
 - 扩展磁盘占用所有空间并重新计算
 
 ```shell
-sudo lvextend -l +100%FREE /dev/mapper/ubuntu--vg-ubuntu--lv
-sudo resize2fs /dev/mapper/ubuntu--vg-ubuntu--lv
+sudo lvextend -l +100%FREE /dev/mapper/ubuntu--vg-ubuntu--lv && sudo resize2fs /dev/mapper/ubuntu--vg-ubuntu--lv
 ```
 
 - 查看容量
