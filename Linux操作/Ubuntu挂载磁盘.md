@@ -15,13 +15,13 @@ sudo mkfs -t ext4 /dev/vdb
 - 创建要挂载的文件夹
 
 ```shell
-sudo mkdir /40tdisk
+sudo mkdir /mnt/otherdevice
 ```
 
 - 挂载硬盘到该文件夹上
 
 ```shell
-sudo mount /dev/vdb /40tdisk
+sudo mount /dev/vdb /mnt/otherdevice
 ```
 
 - 进入 fstab 修改配置(重启自动挂载)
@@ -33,7 +33,15 @@ sudo nano /etc/fstab
 - 在最后一行添加如下内容:
 
 ```conf
-/dev/vdb /40tdisk ext4 defaults 0 0
+/dev/vdb /mnt/otherdevice ntfs defaults 0 0
 ```
 
 - 自此,Ubuntu 磁盘挂载就完成了.若是需要对磁盘分区,则可以在格式化之前进行分区后再格式化
+
+- 卸载磁盘
+
+```bash
+sudo umount /mnt/otherdevice
+```
+
+/etc/fstab 添加 NTFS 挂载
